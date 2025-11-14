@@ -5,14 +5,18 @@ import { useState } from 'react';
 export default function Deaf() {
   const [prompt, setPrompt] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingMode, setRecordingMode] = useState<'single' | 'split'>('single');
   const [transcript, setTranscript] = useState('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.');
   const [summary, setSummary] = useState('Summary: User discussed project deadlines and mentioned three action items for next week. Key focus on completing documentation and scheduling team review.');
 
   const handleRecord = () => {
+    if (!isRecording) {
+      setRecordingMode(prompt.length > 0 ? 'split' : 'single');
+    }
     setIsRecording(!isRecording);
   };
 
-  const showSplit = isRecording && prompt.length > 0;
+  const showSplit = recordingMode === 'split';
 
   return (
     <View style={styles.container}>
