@@ -34,27 +34,13 @@ export default function Blind() {
         <Text style={styles.buttonText}>MODE</Text>
       </Pressable>
 
-      <View style={{ flex: 0.75 }}>
+      <Pressable style={{ flex: 0.75 }} onPress={takePicture}>
         <CameraView
           ref={camera}
           style={{ flex: 1 }}
           facing="back"
         />
-        <Pressable
-          onPress={takePicture}
-          style={{
-            position: 'absolute',
-            bottom: 30,
-            alignSelf: 'center',
-            width: 70,
-            height: 70,
-            borderRadius: 35,
-            backgroundColor: 'white',
-            borderWidth: 5,
-            borderColor: '#333'
-          }}
-        />
-      </View>
+      </Pressable>
     </View>
   );
 }
