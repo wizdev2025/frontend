@@ -1,21 +1,22 @@
 import { View, Pressable, Text } from 'react-native';
 import { router } from 'expo-router';
+import { styles } from './styles';
 
 export default function Index() {
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <Pressable
-        style={{ flex: 1, backgroundColor: '#4CAF50', justifyContent: 'center', alignItems: 'center' }}
+        style={styles.buttonGreen}
         onPress={() => router.push('/deaf')}
       >
-        <Text style={{ fontSize: 24, color: 'white' }}>Deaf</Text>
+        <Text style={styles.buttonText}>Deaf</Text>
       </Pressable>
 
       <Pressable
-        style={{ flex: 1, backgroundColor: '#FFEB3B', justifyContent: 'center', alignItems: 'center' }}
+        style={styles.buttonYellow}
         onPress={() => router.push('/blind')}
       >
-        <Text style={{ fontSize: 24, color: 'black' }}>Blind</Text>
+        <Text style={styles.buttonTextDark}>Blind</Text>
       </Pressable>
     </View>
   );
