@@ -1,11 +1,11 @@
 import { StyleSheet } from 'react-native';
 
 export const colors = {
-  punchRed: '#e63946',
+  textMain: '#e63946',
   white: '#ffffff',
   frostedBlue: '#a8dadc',
   cerulean: '#457b9d',
-  oxfordNavy: '#1d3557',
+  background: '#1d3557',
   divider: '#e0e0e0',
   gray: '#9E9E9E'
 };
@@ -22,7 +22,7 @@ const card = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.oxfordNavy
+    backgroundColor: colors.background
   },
   card,
   buttonCard: {
@@ -47,29 +47,29 @@ export const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 48,
-    color: colors.punchRed,
-    fontFamily: 'Atkinson'
+    color: colors.textMain,
+    fontFamily: 'Atkinson-Bold'
   },
   buttonTextDark: {
     fontSize: 48,
-    color: colors.punchRed,
-    fontFamily: 'Atkinson'
+    color: colors.textMain,
+    fontFamily: 'Atkinson-Bold'
   },
   centerText: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.oxfordNavy,
+    backgroundColor: colors.background,
     fontFamily: 'Atkinson'
   },
   pageText: {
     fontSize: 48,
-    color: colors.punchRed,
+    color: colors.textMain,
     fontFamily: 'Atkinson'
   },
   text: {
     fontSize: 16,
-    color: colors.oxfordNavy,
+    color: colors.background,
     fontFamily: 'Atkinson'
   },
   textSecondary: {

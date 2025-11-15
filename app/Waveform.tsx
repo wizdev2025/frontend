@@ -39,7 +39,7 @@ export default function Waveform() {
           key={i}
           style={{
             width: 6,
-            backgroundColor: colors.punchRed,
+            backgroundColor: colors.textMain,
             borderRadius: 3,
             height: bar.interpolate({
               inputRange: [0, 1],

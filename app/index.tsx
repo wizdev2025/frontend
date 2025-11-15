@@ -4,6 +4,7 @@ import { styles, colors } from './styles';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Index() {
+
   return (
     <View style={styles.container}>
       <View style={{ flex: 1, padding: 10 }}>
@@ -12,7 +13,7 @@ export default function Index() {
           onPress={() => router.push('/deaf')}
         >
           <Text style={styles.buttonText}>Hearing </Text>
-          <Ionicons name="ear" size={64} color={colors.punchRed} style={{ marginBottom: 10 }} />
+          <Ionicons name="ear" size={64} color={colors.textMain} style={{ marginBottom: 10 }} />
           <Text style={styles.buttonText}>Assistance</Text>
         </Pressable>
       </View>
@@ -23,7 +24,7 @@ export default function Index() {
           onPress={() => router.push('/blind')}
         >
           <Text style={styles.buttonTextDark}>Visual</Text>
-          <Ionicons name="eye" size={128} color={colors.punchRed} style={{ marginBottom: 10 }} />
+          <Ionicons name="eye" size={128} color={colors.textMain} style={{ marginBottom: 10 }} />
           <Text style={styles.buttonTextDark}>Assistance</Text>
         </Pressable>
       </View>
