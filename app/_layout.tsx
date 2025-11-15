@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
+import { Text } from 'react-native';
 import { colors } from './styles';
 
 export default function RootLayout() {
@@ -13,9 +14,18 @@ export default function RootLayout() {
   return (
     <Stack screenOptions={{
       title: 'Bridge',
+      headerRight: () => (
+        <Text style={{
+          color: colors.red,
+          fontFamily: 'Atkinson-Bold',
+          marginRight: 15
+        }}>
+          Powered By Red Hat OpenShift
+        </Text>
+      ),
       headerShown: true,
       headerStyle: { backgroundColor: colors.white },
-      headerTintColor: colors.textMain,
+      headerTintColor: colors.punchRed,
       headerTitleStyle: { fontFamily: 'Atkinson-Bold' }
     }} />
   );

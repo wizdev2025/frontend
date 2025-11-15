@@ -1,13 +1,15 @@
 import { StyleSheet } from 'react-native';
 
 export const colors = {
-  textMain: '#e63946',
+  textMain: '#0e1daa',
+  textMainVisual: '#050b3d',
   white: '#ffffff',
-  frostedBlue: '#a8dadc',
+  buttonBackground: '#f0e6e7',
   cerulean: '#457b9d',
   background: '#1d3557',
   divider: '#e0e0e0',
-  gray: '#9E9E9E'
+  gray: '#9E9E9E',
+  red: '#F00000'
 };
 
 const card = {
@@ -30,7 +32,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.frostedBlue
+    backgroundColor: colors.buttonBackground
   },
   buttonGray: {
     backgroundColor: colors.gray
@@ -47,12 +49,12 @@ export const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 48,
-    color: colors.textMain,
+    color: colors.textMainVisual,
     fontFamily: 'Atkinson-Bold'
   },
-  buttonTextDark: {
-    fontSize: 48,
-    color: colors.textMain,
+  buttonTextVisual: {
+    fontSize: 70,
+    color: colors.textMainVisual,
     fontFamily: 'Atkinson-Bold'
   },
   centerText: {
