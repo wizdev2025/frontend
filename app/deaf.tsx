@@ -1,37 +1,55 @@
 import { View, Pressable, Text, TextInput, ScrollView, Alert } from 'react-native';
 import { styles } from './styles';
-import { useState } from 'react';
-import { WhisperClient } from './whisperClient';
+import { useState, useEffect, useRef } from 'react';
+import WhisperLiveClient from './whisperLiveClient';
 
 export default function Deaf() {
   const [prompt, setPrompt] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'single' | 'split'>('single');
-  const [transcript, setTranscript] = useState('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.');
-  const [summary, setSummary] = useState('Summary: User discussed project deadlines and mentioned three action items for next week. Key focus on completing documentation and scheduling team review.');
+  const [transcript, setTranscript] = useState('');
+  const [summary, setSummary] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState('');
 
-  const [client] = useState(() => new WhisperClient(
-    'YOUR_SERVER_IP',
-    9090,
-    (text) => setTranscript(prev => prev + ' ' + text)
-  ));
+  const clientRef = useRef<WhisperLiveClient | null>(null);
+
+  useEffect(() => {
+    clientRef.current = new WhisperLiveClient({
+      host: '192.168.1.100', // Change to your server IP
+      port: 9090,
+      onTranscription: (text, segments) => {
+        setTranscript(text);
+        console.log('[Deaf] Transcript:', text);
+      },
+      onConnectionStatus: (status) => {
+        setConnectionStatus(status);
+        console.log('[Deaf] Connection status:', status);
+      }
+    });
+
+    return () => {
+      clientRef.current?.disconnect();
+    };
+  }, []);
 
   const handleRecord = async () => {
     if (!isRecording) {
       try {
-        console.log('[Deaf] Connecting to Whisper server...');
-        await client.connect();
+        await clientRef.current?.connect();
         console.log('[Deaf] ✓ Connected successfully');
 
+        await clientRef.current?.startRecording();
+        console.log('[Deaf] ✓ Recording started');
+
         setRecordingMode(prompt.length > 0 ? 'split' : 'single');
-        await client.startRecording();
         setIsRecording(true);
       } catch (error) {
         console.error('[Deaf] ✗ Connection failed:', error);
-        Alert.alert('Connection Failed', 'Could not connect to Whisper server');
+        Alert.alert('Error', 'Failed to connect to server');
       }
     } else {
-      await client.stopRecording();
+      await clientRef.current?.stopRecording();
+      console.log('[Deaf] Recording stopped');
       setIsRecording(false);
     }
   };
@@ -62,15 +80,15 @@ export default function Deaf() {
       {showSplit ? (
         <View style={{ flex: 0.5 }}>
           <ScrollView style={{ flex: 0.75, backgroundColor: '#f5f5f5', padding: 10 }}>
-            <Text style={{ fontSize: 16 }}>{summary}</Text>
+            <Text style={{ fontSize: 16 }}>{summary || 'Summary will appear here...'}</Text>
           </ScrollView>
           <ScrollView style={{ flex: 0.25, backgroundColor: 'white', padding: 10, borderTopWidth: 1, borderTopColor: '#ccc' }}>
-            <Text style={{ fontSize: 14, color: '#666' }}>{transcript}</Text>
+            <Text style={{ fontSize: 14, color: '#666' }}>{transcript || 'Transcript...'}</Text>
           </ScrollView>
         </View>
       ) : (
         <ScrollView style={{ flex: 0.5, backgroundColor: 'white', padding: 10 }}>
-          <Text style={{ fontSize: 16 }}>{transcript}</Text>
+          <Text style={{ fontSize: 16 }}>{transcript || 'Transcript will appear here...'}</Text>
         </ScrollView>
       )}
 
