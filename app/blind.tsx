@@ -1,11 +1,17 @@
-import { View, Pressable, Text } from 'react-native';
+import { View, Pressable, Text, TextInput, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { styles } from './styles';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 export default function Blind() {
   const [permission, requestPermission] = useCameraPermissions();
   const camera = useRef(null);
+  const [prompt, setPrompt] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const backendUrl = 'http://192.168.89.136:9090/describe_scene';
 
   if (!permission) {
     return <View />;
@@ -22,17 +28,85 @@ export default function Blind() {
   }
 
   const takePicture = async () => {
-    if (camera.current) {
-      const photo = await camera.current.takePictureAsync();
-      console.log(photo.uri);
+    if (camera.current && !isProcessing) {
+      try {
+        setIsProcessing(true);
+        console.log('[Camera] Taking picture...');
+        const photo = await camera.current.takePictureAsync();
+        console.log('[Camera] ✓ Picture taken:', photo.uri);
+
+        console.log('[HTTP] Sending to', backendUrl);
+        const formData = new FormData();
+        formData.append('file', {
+          uri: photo.uri,
+          type: 'image/jpeg',
+          name: 'photo.jpg',
+        } as any);
+        
+        if (prompt) {
+          formData.append('prompt', prompt);
+        }
+
+        const response = await fetch(backendUrl, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        console.log('[HTTP] ✓ Response received');
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        
+        const audioUri = FileSystem.documentDirectory + 'description.mp3';
+        await FileSystem.writeAsStringAsync(audioUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        console.log('[Audio] ✓ Audio saved:', audioUri);
+        
+        console.log('[Audio] Playing description...');
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: audioUri },
+          { shouldPlay: true }
+        );
+        
+        await sound.playAsync();
+        console.log('[Audio] ✓ Playback started');
+        
+        setIsProcessing(false);
+      } catch (error) {
+        console.error('[Blind] ✗ Failed:', error);
+        Alert.alert('Failed', String(error));
+        setIsProcessing(false);
+      }
     }
   };
 
   return (
     <View style={styles.container}>
-      <Pressable style={{ flex: 0.25, backgroundColor: '#9C27B0', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={styles.buttonText}>MODE</Text>
-      </Pressable>
+      <View style={{ flex: 0.25, padding: 10, justifyContent: 'center', backgroundColor: '#9C27B0' }}>
+        <TextInput
+          style={{
+            flex: 1,
+            backgroundColor: isProcessing ? '#e0e0e0' : 'white',
+            borderWidth: 1,
+            borderColor: '#ccc',
+            padding: 10,
+            fontSize: 18,
+            textAlignVertical: 'top'
+          }}
+          placeholder="Enter detailed questions (optional)"
+          value={prompt}
+          onChangeText={setPrompt}
+          editable={!isProcessing}
+          multiline
+        />
+      </View>
 
       <Pressable style={{ flex: 0.75 }} onPress={takePicture}>
         <CameraView
