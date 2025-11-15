@@ -7,8 +7,8 @@ export class WhisperClient {
 
   constructor(host: string, port: number, onTranscript: (text: string) => void) {
     const protocol = host.includes('.') ? 'https' : 'http';
-    // this.backendUrl = `${protocol}://${host}:${port}/transcribe_audio`;
-    this.backendUrl = `${protocol}://${host}/transcribe_audio`;
+    const portStr = host.includes('.') ? '' : `:${port}`;
+    this.backendUrl = `${protocol}://${host}${portStr}/transcribe_audio`;
     this.onTranscript = onTranscript;
   }
 
@@ -83,10 +83,10 @@ export class WhisperClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const transcript = await response.text();
       console.log('[HTTP] ✓ Response received');
+      console.log('[HTTP] Transcript:', transcript);
 
-      const transcript = data.text || data.transcript || '';
       this.recording = null;
       this.onTranscript(transcript);
       return transcript;
