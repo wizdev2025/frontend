@@ -1,6 +1,7 @@
-import { View, Pressable, Text, TextInput, ScrollView } from 'react-native';
+import { View, Pressable, Text, TextInput, ScrollView, Alert } from 'react-native';
 import { styles } from './styles';
 import { useState } from 'react';
+import { WhisperClient } from './whisperClient';
 
 export default function Deaf() {
   const [prompt, setPrompt] = useState('');
@@ -9,11 +10,30 @@ export default function Deaf() {
   const [transcript, setTranscript] = useState('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.');
   const [summary, setSummary] = useState('Summary: User discussed project deadlines and mentioned three action items for next week. Key focus on completing documentation and scheduling team review.');
 
-  const handleRecord = () => {
+  const [client] = useState(() => new WhisperClient(
+    '192.168.89.136',
+    9090,
+    (text) => setTranscript(prev => prev + ' ' + text)
+  ));
+
+  const handleRecord = async () => {
     if (!isRecording) {
-      setRecordingMode(prompt.length > 0 ? 'split' : 'single');
+      try {
+        console.log('[Deaf] Connecting to Whisper server...');
+        await client.connect();
+        console.log('[Deaf] ✓ Connected successfully');
+
+        setRecordingMode(prompt.length > 0 ? 'split' : 'single');
+        await client.startRecording();
+        setIsRecording(true);
+      } catch (error) {
+        console.error('[Deaf] ✗ Connection failed:', error);
+        Alert.alert('Connection Failed', 'Could not connect to Whisper server');
+      }
+    } else {
+      await client.stopRecording();
+      setIsRecording(false);
     }
-    setIsRecording(!isRecording);
   };
 
   const showSplit = recordingMode === 'split';
