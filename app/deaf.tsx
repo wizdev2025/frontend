@@ -1,5 +1,5 @@
 import { View, Pressable, Text, TextInput, ScrollView, Alert } from 'react-native';
-import { styles } from './styles';
+import { styles, colors } from './styles';
 import { useState } from 'react';
 import { WhisperClient } from './whisperClient';
 import Waveform from './Waveform';
@@ -50,7 +50,7 @@ export default function Deaf() {
   };
 
   const showSplit = recordingMode === 'split';
-  const buttonColor = isProcessing ? styles.buttonGray : (isRecording ? styles.buttonRed : styles.buttonGreen);
+  const buttonColor = isProcessing ? styles.buttonGray : {};
 
   return (
     <View style={styles.container}>
@@ -58,12 +58,13 @@ export default function Deaf() {
         <TextInput
           style={[styles.inputCard, {
             flex: 1,
-            backgroundColor: (isRecording || isProcessing) ? '#f5f5f5' : '#fff',
+            backgroundColor: colors.honeydew,
             padding: 10,
             fontSize: 18,
             textAlignVertical: 'top'
           }]}
           placeholder="Enter prompt (e.g., 'Summarize focusing on todos')"
+          placeholderTextColor={colors.cerulean}
           value={prompt}
           onChangeText={setPrompt}
           editable={!isRecording && !isProcessing}
@@ -75,18 +76,18 @@ export default function Deaf() {
         <View style={{ flex: 0.5, padding: 10, paddingTop: 0 }}>
           <View style={[styles.displayCard, { flex: 1 }]}>
             <ScrollView style={{ flex: 0.75, padding: 10 }}>
-              <Text style={{ fontSize: 16 }}>{summary}</Text>
+              <Text style={styles.text}>{summary}</Text>
             </ScrollView>
-            <View style={{ height: 1, backgroundColor: '#e0e0e0', marginHorizontal: 10 }} />
+            <View style={{ height: 1, backgroundColor: colors.cerulean, marginHorizontal: 10 }} />
             <ScrollView style={{ flex: 0.25, padding: 10 }}>
-              <Text style={{ fontSize: 14, color: '#666' }}>{transcript}</Text>
+              <Text style={styles.textSecondary}>{transcript}</Text>
             </ScrollView>
           </View>
         </View>
       ) : (
         <View style={{ flex: 0.5, padding: 10, paddingTop: 0 }}>
           <ScrollView style={[styles.displayCard, { flex: 1, padding: 10 }]}>
-            <Text style={{ fontSize: 16 }}>{transcript}</Text>
+            <Text style={styles.text}>{transcript}</Text>
           </ScrollView>
         </View>
       )}

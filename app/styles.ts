@@ -1,5 +1,15 @@
 import { StyleSheet } from 'react-native';
 
+export const colors = {
+  punchRed: '#e63946',
+  honeydew: '#f1faee',
+  frostedBlue: '#a8dadc',
+  cerulean: '#457b9d',
+  oxfordNavy: '#1d3557',
+  divider: '#e0e0e0',
+  gray: '#9E9E9E'
+};
+
 const card = {
   borderRadius: 12,
   shadowColor: '#000',
@@ -12,55 +22,56 @@ const card = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: colors.oxfordNavy
   },
   card,
   buttonCard: {
     ...card,
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  buttonGreen: {
-    backgroundColor: '#4CAF50'
-  },
-  buttonYellow: {
-    backgroundColor: '#FFEB3B'
-  },
-  buttonRed: {
-    backgroundColor: '#F44336'
+    alignItems: 'center',
+    backgroundColor: colors.frostedBlue
   },
   buttonGray: {
-    backgroundColor: '#9E9E9E'
-  },
-  buttonPurple: {
-    backgroundColor: '#9C27B0'
+    backgroundColor: colors.gray
   },
   inputCard: {
     ...card,
-    backgroundColor: '#fff',
+    backgroundColor: colors.honeydew,
     borderWidth: 1,
-    borderColor: '#e0e0e0'
+    borderColor: colors.cerulean
   },
   displayCard: {
     ...card,
-    backgroundColor: '#f9f9f9'
+    backgroundColor: colors.honeydew
   },
   buttonText: {
     fontSize: 48,
-    color: '#fff'
+    color: colors.punchRed
   },
   buttonTextDark: {
     fontSize: 48,
-    color: '#000'
+    color: colors.punchRed
   },
   centerText: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff'
+    backgroundColor: colors.oxfordNavy
   },
   pageText: {
-    fontSize: 48
+    fontSize: 48,
+    color: colors.punchRed
+  },
+  text: {
+    fontSize: 16,
+    color: colors.oxfordNavy
+  },
+  textSecondary: {
+    fontSize: 14,
+    color: colors.cerulean
+  },
+  placeholder: {
+    color: colors.cerulean
   }
 });

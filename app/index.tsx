@@ -1,6 +1,6 @@
 import { View, Pressable, Text } from 'react-native';
 import { router } from 'expo-router';
-import { styles } from './styles';
+import { styles, colors } from './styles';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Index() {
@@ -8,21 +8,21 @@ export default function Index() {
     <View style={styles.container}>
       <View style={{ flex: 1, padding: 10 }}>
         <Pressable
-          style={[styles.buttonCard, styles.buttonGreen]}
+          style={styles.buttonCard}
           onPress={() => router.push('/deaf')}
         >
-          <Ionicons name="ear" size={64} color="#fff" style={{ marginBottom: 10 }} />
-          <Text style={styles.buttonText}>Need help hearing</Text>
+          <Ionicons name="ear" size={64} color={colors.punchRed} style={{ marginBottom: 10 }} />
+          <Text style={styles.buttonText}>Hearing Assistance</Text>
         </Pressable>
       </View>
 
       <View style={{ flex: 1, padding: 10 }}>
         <Pressable
-          style={[styles.buttonCard, styles.buttonYellow]}
+          style={styles.buttonCard}
           onPress={() => router.push('/blind')}
         >
-          <Ionicons name="eye" size={64} color="#000" style={{ marginBottom: 10 }} />
-          <Text style={styles.buttonTextDark}>Need help seeing</Text>
+          <Ionicons name="eye" size={64} color={colors.punchRed} style={{ marginBottom: 10 }} />
+          <Text style={styles.buttonTextDark}>Visual Assistance</Text>
         </Pressable>
       </View>
     </View>

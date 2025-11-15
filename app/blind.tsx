@@ -1,6 +1,6 @@
 import { View, Pressable, Text, TextInput, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { styles } from './styles';
+import { styles, colors } from './styles';
 import { useRef, useState } from 'react';
 
 export default function Blind() {
@@ -76,12 +76,13 @@ export default function Blind() {
         <TextInput
           style={[styles.inputCard, {
             flex: 1,
-            backgroundColor: isProcessing ? '#f5f5f5' : '#fff',
+            backgroundColor: colors.honeydew,
             padding: 10,
             fontSize: 18,
             textAlignVertical: 'top'
           }]}
           placeholder="Enter detailed questions (optional)"
+          placeholderTextColor={colors.cerulean}
           value={prompt}
           onChangeText={setPrompt}
           editable={!isProcessing}

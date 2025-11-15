@@ -1,5 +1,6 @@
 import { View, Animated, Easing } from 'react-native';
 import { useEffect, useRef } from 'react';
+import { colors } from './styles';
 
 export default function Waveform() {
   const bars = [useRef(new Animated.Value(0.3)).current,
@@ -38,7 +39,7 @@ export default function Waveform() {
           key={i}
           style={{
             width: 6,
-            backgroundColor: '#fff',
+            backgroundColor: colors.punchRed,
             borderRadius: 3,
             height: bar.interpolate({
               inputRange: [0, 1],
