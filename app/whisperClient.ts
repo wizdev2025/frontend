@@ -1,20 +1,27 @@
-import { Audio } from 'expo-av';
+import AudioRecord from 'react-native-audio-record';
 
 export class WhisperClient {
   private host: string;
   private port: number;
   private ws: WebSocket | null = null;
-  private recording: Audio.Recording | null = null;
   private uid: string;
   private serverReady: boolean = false;
-  private isRecording: boolean = false;
   private onTranscript: (text: string) => void;
+  private audioBuffer: Int16Array = new Int16Array(0);
+  private CHUNK_SIZE = 8000;
 
   constructor(host: string, port: number, onTranscript: (text: string) => void) {
     this.host = host;
     this.port = port;
     this.onTranscript = onTranscript;
     this.uid = this.generateUUID();
+
+    AudioRecord.init({
+      sampleRate: 16000,
+      channels: 1,
+      bitsPerSample: 16,
+      audioSource: 6,
+    });
   }
 
   private generateUUID(): string {
@@ -114,110 +121,69 @@ export class WhisperClient {
   async startRecording(): Promise<void> {
     console.log('[WhisperClient] Starting recording...');
 
-    await Audio.requestPermissionsAsync();
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-    });
-
-    this.recording = new Audio.Recording();
-
-    await this.recording.prepareToRecordAsync({
-      android: {
-        extension: '.wav',
-        outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-        audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-      },
-      ios: {
-        extension: '.wav',
-        audioQuality: Audio.IOSAudioQuality.HIGH,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-        linearPCMBitDepth: 16,
-        linearPCMIsBigEndian: false,
-        linearPCMIsFloat: false,
-      },
-      web: {
-        mimeType: 'audio/webm',
-        bitsPerSecond: 128000,
-      },
-    });
-
-    this.recording.setOnRecordingStatusUpdate((status) => {
-      if (status.isRecording && status.durationMillis % 500 < 50) {
-        this.sendAudioChunk();
+    AudioRecord.on('data', (data: any) => {
+      const base64 = data;
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
       }
+      const int16 = new Int16Array(bytes.buffer);
+      this.processAudioChunk(int16);
     });
 
-    await this.recording.startAsync();
-    this.isRecording = true;
+    AudioRecord.start();
     console.log('[WhisperClient] Recording started');
   }
 
-  private async sendAudioChunk(): Promise<void> {
-    // Note: expo-av doesn't support real-time streaming
-    // This is a simplified version - for production, use expo-av with streaming
-    // or a different audio library that supports chunk-by-chunk recording
+  private processAudioChunk(chunk: Int16Array): void {
+    const newBuffer = new Int16Array(this.audioBuffer.length + chunk.length);
+    newBuffer.set(this.audioBuffer);
+    newBuffer.set(chunk, this.audioBuffer.length);
+    this.audioBuffer = newBuffer;
+
+    while (this.audioBuffer.length >= this.CHUNK_SIZE) {
+      const chunkToSend = this.audioBuffer.slice(0, this.CHUNK_SIZE);
+      this.audioBuffer = this.audioBuffer.slice(this.CHUNK_SIZE);
+
+      const float32 = new Float32Array(this.CHUNK_SIZE);
+      for (let i = 0; i < this.CHUNK_SIZE; i++) {
+        float32[i] = chunkToSend[i] / 32768.0;
+      }
+
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(float32.buffer);
+        console.log(`[WhisperClient] Sent chunk: ${float32.length} samples`);
+      }
+    }
   }
 
   async stopRecording(): Promise<void> {
-    if (!this.recording) return;
-
     console.log('[WhisperClient] Stopping recording...');
-    this.isRecording = false;
 
-    await this.recording.stopAndUnloadAsync();
-    const uri = this.recording.getURI();
+    AudioRecord.stop();
 
-    if (uri) {
-      await this.sendAudioFile(uri);
+    if (this.audioBuffer.length > 0) {
+      const float32 = new Float32Array(this.audioBuffer.length);
+      for (let i = 0; i < this.audioBuffer.length; i++) {
+        float32[i] = this.audioBuffer[i] / 32768.0;
+      }
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(float32.buffer);
+      }
     }
-
-    this.recording = null;
 
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const endMessage = 'END_OF_AUDIO';
-      this.ws.send(endMessage);
+      this.ws.send('END_OF_AUDIO');
       console.log('[WhisperClient] Sent END_OF_AUDIO');
     }
-  }
 
-  private async sendAudioFile(uri: string): Promise<void> {
-    console.log('[WhisperClient] Sending audio file...');
-
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-
-    const int16Array = new Int16Array(arrayBuffer);
-    const float32Array = new Float32Array(int16Array.length);
-
-    for (let i = 0; i < int16Array.length; i++) {
-      float32Array[i] = int16Array[i] / 32768.0;
-    }
-
-    const CHUNK_SIZE = 8000;
-    for (let i = 0; i < float32Array.length; i += CHUNK_SIZE) {
-      const chunk = float32Array.slice(i, i + CHUNK_SIZE);
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(chunk.buffer);
-      }
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-
-    console.log('[WhisperClient] Audio file sent');
+    this.audioBuffer = new Int16Array(0);
   }
 
   disconnect(): void {
     console.log('[WhisperClient] Disconnecting...');
-
-    if (this.isRecording) {
-      this.stopRecording();
-    }
+    AudioRecord.stop();
 
     if (this.ws) {
       this.ws.close();

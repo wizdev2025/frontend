@@ -11,7 +11,7 @@ export default function Deaf() {
   const [summary, setSummary] = useState('Summary: User discussed project deadlines and mentioned three action items for next week. Key focus on completing documentation and scheduling team review.');
 
   const [client] = useState(() => new WhisperClient(
-    '192.168.89.136',
+    'YOUR_SERVER_IP',
     9090,
     (text) => setTranscript(prev => prev + ' ' + text)
   ));
