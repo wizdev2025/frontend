@@ -86,7 +86,7 @@ export default function Blind() {
         <TextInput
           style={[styles.inputCard, {
             flex: 1,
-            backgroundColor: colors.honeydew,
+            backgroundColor: colors.white,
             padding: 10,
             fontSize: 18,
             textAlignVertical: 'top'

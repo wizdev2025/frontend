@@ -12,7 +12,7 @@ export default function Index() {
           onPress={() => router.push('/deaf')}
         >
           <Text style={styles.buttonText}>Hearing </Text>
-          <Ionicons name="ear" size={128} color={colors.punchRed} style={{ marginBottom: 10 }} />
+          <Ionicons name="ear" size={64} color={colors.punchRed} style={{ marginBottom: 10 }} />
           <Text style={styles.buttonText}>Assistance</Text>
         </Pressable>
       </View>

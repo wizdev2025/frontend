@@ -25,7 +25,7 @@ export default function Deaf() {
       try {
         setIsProcessing(true);
         setRecordingMode(prompt.length > 0 ? 'split' : 'single');
-        setTranscript('');
+        setTranscript('The transcript will appear here');
         await client.startRecording();
         setIsRecording(true);
         setIsProcessing(false);
@@ -58,7 +58,7 @@ export default function Deaf() {
         <TextInput
           style={[styles.inputCard, {
             flex: 1,
-            backgroundColor: colors.honeydew,
+            backgroundColor: colors.white,
             padding: 10,
             fontSize: 18,
             textAlignVertical: 'top'

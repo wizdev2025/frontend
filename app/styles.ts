@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 
 export const colors = {
   punchRed: '#e63946',
-  honeydew: '#f1faee',
+  white: '#ffffff',
   frostedBlue: '#a8dadc',
   cerulean: '#457b9d',
   oxfordNavy: '#1d3557',
@@ -37,13 +37,13 @@ export const styles = StyleSheet.create({
   },
   inputCard: {
     ...card,
-    backgroundColor: colors.honeydew,
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.cerulean
   },
   displayCard: {
     ...card,
-    backgroundColor: colors.honeydew
+    backgroundColor: colors.white
   },
   buttonText: {
     fontSize: 48,
