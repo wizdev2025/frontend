@@ -1,7 +1,5 @@
 import { View, Pressable, Text, TextInput, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
 import { styles } from './styles';
 import { useRef, useState } from 'react';
 
@@ -11,7 +9,7 @@ export default function Blind() {
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const backendUrl = 'https://vllm-app-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com:8080/describe_image';
+  const backendUrl = 'https://vllm-app-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com/describe_image';
 
   if (!permission) {
     return <View />;
@@ -40,12 +38,8 @@ export default function Blind() {
         formData.append('file', {
           uri: photo.uri,
           type: 'image/jpeg',
-          name: 'photo.jpg',
+          name: 'image.jpeg',
         } as any);
-
-        if (prompt) {
-          formData.append('prompt', prompt);
-        }
 
         const response = await fetch(backendUrl, {
           method: 'POST',
@@ -60,23 +54,12 @@ export default function Blind() {
         }
 
         console.log('[HTTP] ✓ Response received');
-        const arrayBuffer = await response.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        const data = await response.json();
+        console.log('[HTTP] Response data:', JSON.stringify(data));
 
-        const audioUri = FileSystem.documentDirectory + 'description.mp3';
-        await FileSystem.writeAsStringAsync(audioUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        console.log('[Audio] ✓ Audio saved:', audioUri);
-
-        console.log('[Audio] Playing description...');
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: audioUri },
-          { shouldPlay: true }
-        );
-
-        await sound.playAsync();
-        console.log('[Audio] ✓ Playback started');
+        const description = data.output && data.output[0] ? data.output[0] : '';
+        console.log('[HTTP] Description:', description);
+        setPrompt(description);
 
         setIsProcessing(false);
       } catch (error) {

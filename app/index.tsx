@@ -9,14 +9,14 @@ export default function Index() {
         style={styles.buttonGreen}
         onPress={() => router.push('/deaf')}
       >
-        <Text style={styles.buttonText}>Deaf</Text>
+        <Text style={styles.buttonText}>Hard of hearing</Text>
       </Pressable>
 
       <Pressable
         style={styles.buttonYellow}
         onPress={() => router.push('/blind')}
       >
-        <Text style={styles.buttonTextDark}>Blind</Text>
+        <Text style={styles.buttonTextDark}>Visually impaired</Text>
       </Pressable>
     </View>
   );
