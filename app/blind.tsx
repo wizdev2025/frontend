@@ -72,6 +72,16 @@ export default function Blind() {
 
   return (
     <View style={styles.container}>
+      <View style={{ flex: 0.75, padding: 10, paddingTop: 0 }}>
+        <Pressable style={[styles.card, { flex: 1, overflow: 'hidden' }]} onPress={takePicture}>
+          <CameraView
+            ref={camera}
+            style={{ flex: 1 }}
+            facing="back"
+          />
+        </Pressable>
+      </View>
+
       <View style={{ flex: 0.25, padding: 10 }}>
         <TextInput
           style={[styles.inputCard, {
@@ -88,16 +98,6 @@ export default function Blind() {
           editable={!isProcessing}
           multiline
         />
-      </View>
-
-      <View style={{ flex: 0.75, padding: 10, paddingTop: 0 }}>
-        <Pressable style={[styles.card, { flex: 1, overflow: 'hidden' }]} onPress={takePicture}>
-          <CameraView
-            ref={camera}
-            style={{ flex: 1 }}
-            facing="back"
-          />
-        </Pressable>
       </View>
     </View>
   );
