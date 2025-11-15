@@ -89,11 +89,12 @@ export default function Blind() {
             flex: 1,
             backgroundColor: colors.white,
             padding: 10,
-            fontSize: 18,
-            textAlignVertical: 'top'
+            fontSize: 38,
+            textAlignVertical: 'top',
+            textAlign: 'center'
           }]}
           placeholder="Enter detailed questions (optional)"
-          placeholderTextColor={colors.cerulean}
+          placeholderTextColor={colors.textMainVisual}
           value={prompt}
           onChangeText={setPrompt}
           editable={!isProcessing}

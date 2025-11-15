@@ -66,7 +66,7 @@ export const styles = StyleSheet.create({
   },
   pageText: {
     fontSize: 48,
-    color: colors.textMain,
+    color: colors.textMainVisual,
     fontFamily: 'Atkinson'
   },
   text: {
