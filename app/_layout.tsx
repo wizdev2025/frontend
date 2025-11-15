@@ -18,15 +18,16 @@ export default function RootLayout() {
         <Text style={{
           color: colors.red,
           fontFamily: 'Atkinson-Bold',
-          marginRight: 15
+          marginRight: 15,
+          fontSize: 17
         }}>
           Powered By Red Hat OpenShift
         </Text>
       ),
       headerShown: true,
       headerStyle: { backgroundColor: colors.white },
-      headerTintColor: colors.punchRed,
-      headerTitleStyle: { fontFamily: 'Atkinson-Bold' }
+      headerTintColor: colors.textMainVisual,
+      headerTitleStyle: { fontFamily: 'Atkinson-Bold', fontSize: 30}
     }} />
   );
 }
