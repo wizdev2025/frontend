@@ -18,7 +18,7 @@ export default function Blind() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.centerText}>
+      <View style={[styles.centerText, { backgroundColor: colors.buttonBackground }]}>
         <Pressable onPress={requestPermission}>
           <Text style={styles.pageText}>Grant Camera Permission</Text>
         </Pressable>
