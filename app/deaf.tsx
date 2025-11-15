@@ -29,7 +29,7 @@ export default function Deaf() {
         setIsRecording(true);
         setIsProcessing(false);
       } catch (error) {
-        console.error('[Deaf] ✗ Recording failed:', error);
+        console.error('[Deaf] âœ— Recording failed:', error);
         Alert.alert('Recording Failed', String(error));
         setIsProcessing(false);
       }
@@ -40,7 +40,7 @@ export default function Deaf() {
         setIsRecording(false);
         setIsProcessing(false);
       } catch (error) {
-        console.error('[Deaf] ✗ Transcription failed:', error);
+        console.error('[Deaf] âœ— Transcription failed:', error);
         Alert.alert('Transcription Failed', String(error));
         setIsRecording(false);
         setIsProcessing(false);
@@ -49,20 +49,19 @@ export default function Deaf() {
   };
 
   const showSplit = recordingMode === 'split';
+  const buttonColor = isProcessing ? styles.buttonGray : (isRecording ? styles.buttonRed : styles.buttonGreen);
 
   return (
     <View style={styles.container}>
-      <View style={{ flex: 0.25, padding: 10, justifyContent: 'center' }}>
+      <View style={{ flex: 0.25, padding: 10 }}>
         <TextInput
-          style={{
+          style={[styles.inputCard, {
             flex: 1,
-            backgroundColor: (isRecording || isProcessing) ? '#e0e0e0' : 'white',
-            borderWidth: 1,
-            borderColor: '#ccc',
+            backgroundColor: (isRecording || isProcessing) ? '#f5f5f5' : '#fff',
             padding: 10,
             fontSize: 18,
             textAlignVertical: 'top'
-          }}
+          }]}
           placeholder="Enter prompt (e.g., 'Summarize focusing on todos')"
           value={prompt}
           onChangeText={setPrompt}
@@ -72,34 +71,36 @@ export default function Deaf() {
       </View>
 
       {showSplit ? (
-        <View style={{ flex: 0.5 }}>
-          <ScrollView style={{ flex: 0.75, backgroundColor: '#f5f5f5', padding: 10 }}>
-            <Text style={{ fontSize: 16 }}>{summary}</Text>
-          </ScrollView>
-          <ScrollView style={{ flex: 0.25, backgroundColor: 'white', padding: 10, borderTopWidth: 1, borderTopColor: '#ccc' }}>
-            <Text style={{ fontSize: 14, color: '#666' }}>{transcript}</Text>
-          </ScrollView>
+        <View style={{ flex: 0.5, padding: 10, paddingTop: 0 }}>
+          <View style={[styles.displayCard, { flex: 1 }]}>
+            <ScrollView style={{ flex: 0.75, padding: 10 }}>
+              <Text style={{ fontSize: 16 }}>{summary}</Text>
+            </ScrollView>
+            <View style={{ height: 1, backgroundColor: '#e0e0e0', marginHorizontal: 10 }} />
+            <ScrollView style={{ flex: 0.25, padding: 10 }}>
+              <Text style={{ fontSize: 14, color: '#666' }}>{transcript}</Text>
+            </ScrollView>
+          </View>
         </View>
       ) : (
-        <ScrollView style={{ flex: 0.5, backgroundColor: 'white', padding: 10 }}>
-          <Text style={{ fontSize: 16 }}>{transcript}</Text>
-        </ScrollView>
+        <View style={{ flex: 0.5, padding: 10, paddingTop: 0 }}>
+          <ScrollView style={[styles.displayCard, { flex: 1, padding: 10 }]}>
+            <Text style={{ fontSize: 16 }}>{transcript}</Text>
+          </ScrollView>
+        </View>
       )}
 
-      <Pressable
-        style={{
-          flex: 0.25,
-          backgroundColor: isProcessing ? '#9E9E9E' : (isRecording ? '#F44336' : '#4CAF50'),
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}
-        onPress={handleRecord}
-        disabled={isProcessing}
-      >
-        <Text style={styles.buttonText}>
-          {isProcessing ? '...' : (isRecording ? 'STOP' : 'RECORD')}
-        </Text>
-      </Pressable>
+      <View style={{ flex: 0.25, padding: 10, paddingTop: 0 }}>
+        <Pressable
+          style={[styles.buttonCard, buttonColor]}
+          onPress={handleRecord}
+          disabled={isProcessing}
+        >
+          <Text style={styles.buttonText}>
+            {isProcessing ? '...' : (isRecording ? 'STOP' : 'RECORD')}
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

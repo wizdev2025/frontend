@@ -31,7 +31,7 @@ export default function Blind() {
         setIsProcessing(true);
         console.log('[Camera] Taking picture...');
         const photo = await camera.current.takePictureAsync();
-        console.log('[Camera] ✓ Picture taken:', photo.uri);
+        console.log('[Camera] âœ“ Picture taken:', photo.uri);
 
         console.log('[HTTP] Sending to', backendUrl);
         const formData = new FormData();
@@ -53,7 +53,7 @@ export default function Blind() {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        console.log('[HTTP] ✓ Response received');
+        console.log('[HTTP] âœ“ Response received');
         const data = await response.json();
         console.log('[HTTP] Response data:', JSON.stringify(data));
 
@@ -63,7 +63,7 @@ export default function Blind() {
 
         setIsProcessing(false);
       } catch (error) {
-        console.error('[Blind] ✗ Failed:', error);
+        console.error('[Blind] âœ— Failed:', error);
         Alert.alert('Failed', String(error));
         setIsProcessing(false);
       }
@@ -72,17 +72,15 @@ export default function Blind() {
 
   return (
     <View style={styles.container}>
-      <View style={{ flex: 0.25, padding: 10, justifyContent: 'center', backgroundColor: '#9C27B0' }}>
+      <View style={{ flex: 0.25, padding: 10 }}>
         <TextInput
-          style={{
+          style={[styles.inputCard, {
             flex: 1,
-            backgroundColor: isProcessing ? '#e0e0e0' : 'white',
-            borderWidth: 1,
-            borderColor: '#ccc',
+            backgroundColor: isProcessing ? '#f5f5f5' : '#fff',
             padding: 10,
             fontSize: 18,
             textAlignVertical: 'top'
-          }}
+          }]}
           placeholder="Enter detailed questions (optional)"
           value={prompt}
           onChangeText={setPrompt}
@@ -91,13 +89,15 @@ export default function Blind() {
         />
       </View>
 
-      <Pressable style={{ flex: 0.75 }} onPress={takePicture}>
-        <CameraView
-          ref={camera}
-          style={{ flex: 1 }}
-          facing="back"
-        />
-      </Pressable>
+      <View style={{ flex: 0.75, padding: 10, paddingTop: 0 }}>
+        <Pressable style={[styles.card, { flex: 1, overflow: 'hidden' }]} onPress={takePicture}>
+          <CameraView
+            ref={camera}
+            style={{ flex: 1 }}
+            facing="back"
+          />
+        </Pressable>
+      </View>
     </View>
   );
 }
