@@ -2,6 +2,7 @@ import { View, Pressable, Text, TextInput, ScrollView, Alert } from 'react-nativ
 import { styles } from './styles';
 import { useState } from 'react';
 import { WhisperClient } from './whisperClient';
+import Waveform from './Waveform';
 
 export default function Deaf() {
   const [prompt, setPrompt] = useState('');
@@ -96,9 +97,13 @@ export default function Deaf() {
           onPress={handleRecord}
           disabled={isProcessing}
         >
-          <Text style={styles.buttonText}>
-            {isProcessing ? '...' : (isRecording ? 'STOP' : 'RECORD')}
-          </Text>
+          {isRecording ? (
+            <Waveform />
+          ) : (
+            <Text style={styles.buttonText}>
+              {isProcessing ? '...' : 'RECORD'}
+            </Text>
+          )}
         </Pressable>
       </View>
     </View>
