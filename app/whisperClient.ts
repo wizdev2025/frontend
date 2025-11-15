@@ -6,7 +6,9 @@ export class WhisperClient {
   private onTranscript: (text: string) => void;
 
   constructor(host: string, port: number, onTranscript: (text: string) => void) {
-    this.backendUrl = `http://${host}:${port}/transcribe_audio`;
+    const protocol = host.includes('.') ? 'https' : 'http';
+    // this.backendUrl = `${protocol}://${host}:${port}/transcribe_audio`;
+    this.backendUrl = `${protocol}://${host}/transcribe_audio`;
     this.onTranscript = onTranscript;
   }
 
@@ -53,14 +55,16 @@ export class WhisperClient {
     console.log('[Audio] Stopping recording...');
     await this.recording.stopAndUnloadAsync();
     const uri = this.recording.getURI();
-    this.recording = null;
 
-    if (!uri) throw new Error('Failed to get recording URI');
+    if (!uri) {
+      this.recording = null;
+      throw new Error('Failed to get recording URI');
+    }
     console.log('[Audio] ✓ Recording saved:', uri);
 
     console.log('[HTTP] Sending to', this.backendUrl);
     const formData = new FormData();
-    formData.append('file', {
+    formData.append('audio_file', {
       uri,
       type: 'audio/mp3',
       name: 'audio.mp3',
@@ -81,11 +85,13 @@ export class WhisperClient {
 
       const data = await response.json();
       console.log('[HTTP] ✓ Response received');
-      
+
       const transcript = data.text || data.transcript || '';
+      this.recording = null;
       this.onTranscript(transcript);
       return transcript;
     } catch (error) {
+      this.recording = null;
       console.error('[HTTP] ✗ Request failed:', error);
       throw error;
     }

@@ -6,6 +6,7 @@ import { WhisperClient } from './whisperClient';
 export default function Deaf() {
   const [prompt, setPrompt] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'single' | 'split'>('single');
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
@@ -17,24 +18,32 @@ export default function Deaf() {
   ));
 
   const handleRecord = async () => {
+    if (isProcessing) return;
+
     if (!isRecording) {
       try {
+        setIsProcessing(true);
         setRecordingMode(prompt.length > 0 ? 'split' : 'single');
         setTranscript('');
         await client.startRecording();
         setIsRecording(true);
+        setIsProcessing(false);
       } catch (error) {
         console.error('[Deaf] ✗ Recording failed:', error);
         Alert.alert('Recording Failed', String(error));
+        setIsProcessing(false);
       }
     } else {
       try {
+        setIsProcessing(true);
         await client.stopRecording();
         setIsRecording(false);
+        setIsProcessing(false);
       } catch (error) {
         console.error('[Deaf] ✗ Transcription failed:', error);
         Alert.alert('Transcription Failed', String(error));
         setIsRecording(false);
+        setIsProcessing(false);
       }
     }
   };
@@ -47,7 +56,7 @@ export default function Deaf() {
         <TextInput
           style={{
             flex: 1,
-            backgroundColor: isRecording ? '#e0e0e0' : 'white',
+            backgroundColor: (isRecording || isProcessing) ? '#e0e0e0' : 'white',
             borderWidth: 1,
             borderColor: '#ccc',
             padding: 10,
@@ -57,7 +66,7 @@ export default function Deaf() {
           placeholder="Enter prompt (e.g., 'Summarize focusing on todos')"
           value={prompt}
           onChangeText={setPrompt}
-          editable={!isRecording}
+          editable={!isRecording && !isProcessing}
           multiline
         />
       </View>
@@ -78,10 +87,18 @@ export default function Deaf() {
       )}
 
       <Pressable
-        style={{ flex: 0.25, backgroundColor: isRecording ? '#F44336' : '#4CAF50', justifyContent: 'center', alignItems: 'center' }}
+        style={{
+          flex: 0.25,
+          backgroundColor: isProcessing ? '#9E9E9E' : (isRecording ? '#F44336' : '#4CAF50'),
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
         onPress={handleRecord}
+        disabled={isProcessing}
       >
-        <Text style={styles.buttonText}>{isRecording ? 'STOP' : 'RECORD'}</Text>
+        <Text style={styles.buttonText}>
+          {isProcessing ? '...' : (isRecording ? 'STOP' : 'RECORD')}
+        </Text>
       </Pressable>
     </View>
   );
