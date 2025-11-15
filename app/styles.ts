@@ -47,31 +47,38 @@ export const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 48,
-    color: colors.punchRed
+    color: colors.punchRed,
+    fontFamily: 'Atkinson'
   },
   buttonTextDark: {
     fontSize: 48,
-    color: colors.punchRed
+    color: colors.punchRed,
+    fontFamily: 'Atkinson'
   },
   centerText: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.oxfordNavy
+    backgroundColor: colors.oxfordNavy,
+    fontFamily: 'Atkinson'
   },
   pageText: {
     fontSize: 48,
-    color: colors.punchRed
+    color: colors.punchRed,
+    fontFamily: 'Atkinson'
   },
   text: {
     fontSize: 16,
-    color: colors.oxfordNavy
+    color: colors.oxfordNavy,
+    fontFamily: 'Atkinson'
   },
   textSecondary: {
     fontSize: 14,
-    color: colors.cerulean
+    color: colors.cerulean,
+    fontFamily: 'Atkinson'
   },
   placeholder: {
-    color: colors.cerulean
+    color: colors.cerulean,
+    fontFamily: 'Atkinson'
   }
 });

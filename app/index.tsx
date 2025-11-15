@@ -11,8 +11,9 @@ export default function Index() {
           style={styles.buttonCard}
           onPress={() => router.push('/deaf')}
         >
-          <Ionicons name="ear" size={64} color={colors.punchRed} style={{ marginBottom: 10 }} />
-          <Text style={styles.buttonText}>Hearing Assistance</Text>
+          <Text style={styles.buttonText}>Hearing </Text>
+          <Ionicons name="ear" size={128} color={colors.punchRed} style={{ marginBottom: 10 }} />
+          <Text style={styles.buttonText}>Assistance</Text>
         </Pressable>
       </View>
 
@@ -21,8 +22,9 @@ export default function Index() {
           style={styles.buttonCard}
           onPress={() => router.push('/blind')}
         >
-          <Ionicons name="eye" size={64} color={colors.punchRed} style={{ marginBottom: 10 }} />
-          <Text style={styles.buttonTextDark}>Visual Assistance</Text>
+          <Text style={styles.buttonTextDark}>Visual</Text>
+          <Ionicons name="eye" size={128} color={colors.punchRed} style={{ marginBottom: 10 }} />
+          <Text style={styles.buttonTextDark}>Assistance</Text>
         </Pressable>
       </View>
     </View>
