@@ -11,8 +11,8 @@ export default function Deaf() {
   const [summary, setSummary] = useState('');
 
   const [client] = useState(() => new WhisperClient(
-    '192.168.89.136',
-    9090,
+    'whisper-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com',
+    8080,
     (text) => setTranscript(text)
   ));
 

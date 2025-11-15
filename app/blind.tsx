@@ -10,8 +10,8 @@ export default function Blind() {
   const camera = useRef(null);
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  const backendUrl = 'http://192.168.89.136:9090/describe_scene';
+
+  const backendUrl = 'https://vllm-app-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com:8080/describe_image';
 
   if (!permission) {
     return <View />;
@@ -42,7 +42,7 @@ export default function Blind() {
           type: 'image/jpeg',
           name: 'photo.jpg',
         } as any);
-        
+
         if (prompt) {
           formData.append('prompt', prompt);
         }
@@ -62,22 +62,22 @@ export default function Blind() {
         console.log('[HTTP] ✓ Response received');
         const arrayBuffer = await response.arrayBuffer();
         const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-        
+
         const audioUri = FileSystem.documentDirectory + 'description.mp3';
         await FileSystem.writeAsStringAsync(audioUri, base64, {
           encoding: FileSystem.EncodingType.Base64,
         });
         console.log('[Audio] ✓ Audio saved:', audioUri);
-        
+
         console.log('[Audio] Playing description...');
         const { sound } = await Audio.Sound.createAsync(
           { uri: audioUri },
           { shouldPlay: true }
         );
-        
+
         await sound.playAsync();
         console.log('[Audio] ✓ Playback started');
-        
+
         setIsProcessing(false);
       } catch (error) {
         console.error('[Blind] ✗ Failed:', error);
