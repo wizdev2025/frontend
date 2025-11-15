@@ -7,32 +7,35 @@ export default function Deaf() {
   const [prompt, setPrompt] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'single' | 'split'>('single');
-  const [transcript, setTranscript] = useState('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.');
-  const [summary, setSummary] = useState('Summary: User discussed project deadlines and mentioned three action items for next week. Key focus on completing documentation and scheduling team review.');
+  const [transcript, setTranscript] = useState('');
+  const [summary, setSummary] = useState('');
 
   const [client] = useState(() => new WhisperClient(
     '192.168.89.136',
     9090,
-    (text) => setTranscript(prev => prev + ' ' + text)
+    (text) => setTranscript(text)
   ));
 
   const handleRecord = async () => {
     if (!isRecording) {
       try {
-        console.log('[Deaf] Connecting to Whisper server...');
-        await client.connect();
-        console.log('[Deaf] ✓ Connected successfully');
-
         setRecordingMode(prompt.length > 0 ? 'split' : 'single');
+        setTranscript('');
         await client.startRecording();
         setIsRecording(true);
       } catch (error) {
-        console.error('[Deaf] ✗ Connection failed:', error);
-        Alert.alert('Connection Failed', 'Could not connect to Whisper server');
+        console.error('[Deaf] ✗ Recording failed:', error);
+        Alert.alert('Recording Failed', String(error));
       }
     } else {
-      await client.stopRecording();
-      setIsRecording(false);
+      try {
+        await client.stopRecording();
+        setIsRecording(false);
+      } catch (error) {
+        console.error('[Deaf] ✗ Transcription failed:', error);
+        Alert.alert('Transcription Failed', String(error));
+        setIsRecording(false);
+      }
     }
   };
 
