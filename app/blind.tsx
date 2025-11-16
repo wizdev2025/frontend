@@ -6,6 +6,20 @@ import { Audio } from 'expo-av';
 import { documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
 import { ENDPOINTS } from './endpoints';
 
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 3000000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeout);
+    return response;
+  } catch (error) {
+    clearTimeout(timeout);
+    throw error;
+  }
+};
+
 export default function Blind() {
   const [permission, requestPermission] = useCameraPermissions();
   const camera = useRef<CameraView>(null);
@@ -42,7 +56,7 @@ export default function Blind() {
         name: 'image.png',
       } as any);
 
-      const vlmResponse = await fetch(ENDPOINTS.VLM_DESCRIBE, {
+      const vlmResponse = await fetchWithTimeout(ENDPOINTS.VLM_DESCRIBE, {
         method: 'POST',
         body: formData,
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -65,7 +79,7 @@ export default function Blind() {
       const ttsFormData = new FormData();
       ttsFormData.append('text', description);
 
-      const ttsResponse = await fetch(ENDPOINTS.TTS, {
+      const ttsResponse = await fetchWithTimeout(ENDPOINTS.TTS, {
         method: 'POST',
         body: ttsFormData,
       });
