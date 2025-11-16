@@ -1,16 +1,18 @@
 import { Stack } from 'expo-router';
 import { View, Pressable, Text, TextInput, Alert } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { styles, colors } from './styles';
 import { useRef, useState } from 'react';
+import { Audio } from 'expo-av';
+import { documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
 
 export default function Blind() {
   const [permission, requestPermission] = useCameraPermissions();
-  const camera = useRef(null);
+  const camera = useRef<CameraView>(null);
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const backendUrl = 'https://vllm-app-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com/describe_image';
+  const backendUrl = 'https://fastapi-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com/img_to_audio';
 
   if (!permission) {
     return <View />;
@@ -32,14 +34,14 @@ export default function Blind() {
         setIsProcessing(true);
         console.log('[Camera] Taking picture...');
         const photo = await camera.current.takePictureAsync();
-        console.log('[Camera] âœ“ Picture taken:', photo.uri);
+        console.log('[Camera] ✓ Picture taken:', photo.uri);
 
         console.log('[HTTP] Sending to', backendUrl);
         const formData = new FormData();
         formData.append('file', {
           uri: photo.uri,
-          type: 'image/jpeg',
-          name: 'image.jpeg',
+          type: 'image/png',
+          name: 'image.png',
         } as any);
 
         const response = await fetch(backendUrl, {
@@ -50,21 +52,56 @@ export default function Blind() {
           },
         });
 
+        // Log response details
+        console.log('[HTTP] Status:', response.status, response.statusText);
+        console.log('[HTTP] Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
+        console.log('[HTTP] Content-Type:', response.headers.get('content-type'));
+
         if (!response.ok) {
+          const errorText = await response.text();
+          console.log('[HTTP] Error body:', errorText);
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        console.log('[HTTP] âœ“ Response received');
-        const data = await response.json();
-        console.log('[HTTP] Response data:', JSON.stringify(data));
+        console.log('[HTTP] ✓ Response received');
 
-        const description = data.output && data.output[0] ? data.output[0] : '';
-        console.log('[HTTP] Description:', description);
-        setPrompt(description);
+        // Check if it's actually audio
+        const contentType = response.headers.get('content-type');
+        console.log('[HTTP] Actual content-type:', contentType);
 
-        setIsProcessing(false);
+        // Get audio as blob and save
+        const blob = await response.blob();
+        console.log('[Blob] Size:', blob.size, 'Type:', blob.type);
+
+        const reader = new FileReader();
+
+        reader.onloadend = async () => {
+          const base64 = (reader.result as string).split(',')[1];
+          console.log('[Base64] Length:', base64.length);
+          console.log('[Base64] First 100 chars:', base64.substring(0, 100));
+
+          // Save audio file
+          const audioUri = documentDirectory + 'output.wav';
+          await writeAsStringAsync(audioUri, base64, {
+            encoding: 'base64',
+          });
+          console.log('[Audio] ✓ Saved to', audioUri);
+
+          // Play audio
+          await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+          });
+          const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
+          await sound.playAsync();
+          console.log('[Audio] ✓ Playing');
+
+          setIsProcessing(false);
+        };
+
+        reader.readAsDataURL(blob);
+
       } catch (error) {
-        console.error('[Blind] âœ— Failed:', error);
+        console.error('[Blind] ✗ Failed:', error);
         Alert.alert('Failed', String(error));
         setIsProcessing(false);
       }
