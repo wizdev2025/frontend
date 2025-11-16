@@ -5,7 +5,7 @@ import { WhisperClient } from './whisperClient';
 import Waveform from './Waveform';
 
 export default function Deaf() {
-  const [prompt, setPrompt] = useState('');
+  const [summaryOn, setSummaryOn] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'single' | 'split'>('single');
@@ -23,14 +23,14 @@ export default function Deaf() {
     if (!isRecording) {
       try {
         setIsProcessing(true);
-        const mode = prompt.length > 0 ? 'split' : 'single';
+        const mode = summaryOn ? 'split' : 'single';
         setRecordingMode(mode);
         setTranscript('The transcript will appear here');
         if (mode === 'split') {
           setSummary('The summary will appear here');
         }
 
-        client.setPrompt(prompt);
+        client.setPrompt(summaryOn ? 'summarize' : '');
         await client.startRecording();
         setIsRecording(true);
         setIsProcessing(false);
@@ -60,21 +60,20 @@ export default function Deaf() {
   return (
     <View style={styles.container}>
       <View style={{ flex: 0.25, padding: 10 }}>
-        <TextInput
+        <Pressable
           style={[styles.inputCard, {
             flex: 1,
-            backgroundColor: colors.white,
-            padding: 10,
-            fontSize: 18,
-            textAlignVertical: 'top'
+            backgroundColor: summaryOn ? colors.cerulean : colors.white,
+            justifyContent: 'center',
+            alignItems: 'center',
           }]}
-          placeholder="Enter prompt (e.g., 'Summarize focusing on todos')"
-          placeholderTextColor={colors.cerulean}
-          value={prompt}
-          onChangeText={setPrompt}
-          editable={!isRecording && !isProcessing}
-          multiline
-        />
+          onPress={() => setSummaryOn(!summaryOn)}
+          disabled={isRecording || isProcessing}
+        >
+          <Text style={[styles.buttonText, { color: summaryOn ? colors.white : colors.cerulean }]}>
+            Summary: {summaryOn ? 'On' : 'Off'}
+          </Text>
+        </Pressable>
       </View>
 
       {showSplit ? (
