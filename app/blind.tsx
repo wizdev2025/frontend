@@ -1,4 +1,4 @@
-import { View, Pressable, Text, TextInput, Alert } from 'react-native';
+import { View, Pressable, Text, TextInput, Alert, Image } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { styles, colors } from './styles';
 import { useRef, useState, useEffect } from 'react';
@@ -49,6 +49,7 @@ export default function Blind() {
   const soundRef = useRef<Audio.Sound | null>(null);
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -79,6 +80,8 @@ export default function Blind() {
       console.log('[Blind] Taking picture');
       const photo = await camera.current.takePictureAsync();
       console.log('[Blind] Picture taken:', photo.uri);
+
+      setCurrentPhoto(photo.uri);
 
       console.log('[Blind] Sending to VLM using uploadAsync');
 
@@ -137,6 +140,7 @@ export default function Blind() {
         await sound.playAsync();
         console.log('[Blind] Playing audio');
 
+        setCurrentPhoto(null);
         setIsProcessing(false);
       };
 
@@ -152,6 +156,7 @@ export default function Blind() {
       console.error('[Blind] Error details:', JSON.stringify(errorDetails, null, 2));
       console.error('[Blind] Full error object:', error);
       Alert.alert('Error', `${error?.name || 'Error'}: ${error?.message || String(error)}`);
+      setCurrentPhoto(null);
       setIsProcessing(false);
     }
   };
@@ -160,7 +165,11 @@ export default function Blind() {
     <View style={styles.container}>
       <View style={{ flex: 0.75, padding: 10, paddingTop: 0 }}>
         <Pressable style={[styles.card, { flex: 1, overflow: 'hidden' }]} onPress={takePicture}>
-          <CameraView ref={camera} style={{ flex: 1 }} facing="back" />
+          {currentPhoto ? (
+            <Image source={{ uri: currentPhoto }} style={{ flex: 1 }} resizeMode="cover" />
+          ) : (
+            <CameraView ref={camera} style={{ flex: 1 }} facing="back" />
+          )}
         </Pressable>
       </View>
 
