@@ -1,24 +1,68 @@
 import { Audio } from 'expo-av';
+import { ENDPOINTS } from './endpoints';
+
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 300000) => {
+  const controller = new AbortController();
+  const startTime = Date.now();
+
+  console.log(`[Fetch] Starting request to ${url}`);
+  console.log(`[Fetch] Timeout set to ${timeoutMs}ms`);
+
+  const timeout = setTimeout(() => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] TIMEOUT after ${elapsed}ms - aborting`);
+    controller.abort();
+  }, timeoutMs);
+
+  controller.signal.addEventListener('abort', () => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Signal aborted after ${elapsed}ms`);
+  });
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Success after ${elapsed}ms - Status: ${response.status}`);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] FAILED after ${elapsed}ms`);
+    console.log(`[Fetch] Error name: ${error.name}`);
+    console.log(`[Fetch] Error message: ${error.message}`);
+    console.log(`[Fetch] Error type: ${typeof error}`);
+    console.log(`[Fetch] Error keys: ${Object.keys(error).join(', ')}`);
+    console.log(`[Fetch] Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    throw error;
+  }
+};
 
 export class WhisperClient {
-  private backendUrl: string;
   private recording: Audio.Recording | null = null;
   private onTranscript: (text: string) => void;
+  private onSummary?: (text: string) => void;
+  private prompt: string = '';
 
-  constructor(host: string, port: number, onTranscript: (text: string) => void) {
-    const protocol = host.includes('.') ? 'https' : 'http';
-    const portStr = host.includes('.') ? '' : `:${port}`;
-    this.backendUrl = `${protocol}://${host}${portStr}/transcribe_audio`;
+  constructor(
+    onTranscript: (text: string) => void,
+    onSummary?: (text: string) => void
+  ) {
     this.onTranscript = onTranscript;
+    this.onSummary = onSummary;
+  }
+
+  setPrompt(prompt: string) {
+    this.prompt = prompt;
   }
 
   async startRecording(): Promise<void> {
-    console.log('[Audio] Requesting permissions...');
+    console.log('[Whisper] Requesting permissions');
     const { status } = await Audio.requestPermissionsAsync();
     if (status !== 'granted') {
       throw new Error('Microphone permission denied');
     }
-    console.log('[Audio] ✓ Permission granted');
+    console.log('[Whisper] Permission granted');
 
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: true,
@@ -46,13 +90,15 @@ export class WhisperClient {
     });
 
     await this.recording.startAsync();
-    console.log('[Audio] ✓ Recording started');
+    console.log('[Whisper] Recording started');
   }
 
-  async stopRecording(): Promise<string> {
-    if (!this.recording) throw new Error('No recording in progress');
+  async stopRecording(): Promise<void> {
+    if (!this.recording) {
+      throw new Error('No recording in progress');
+    }
 
-    console.log('[Audio] Stopping recording...');
+    console.log('[Whisper] Stopping recording');
     await this.recording.stopAndUnloadAsync();
     const uri = this.recording.getURI();
 
@@ -60,9 +106,9 @@ export class WhisperClient {
       this.recording = null;
       throw new Error('Failed to get recording URI');
     }
-    console.log('[Audio] ✓ Recording saved:', uri);
+    console.log('[Whisper] Recording saved:', uri);
 
-    console.log('[HTTP] Sending to', this.backendUrl);
+    console.log('[Whisper] Sending to transcription API');
     const formData = new FormData();
     formData.append('audio_file', {
       uri,
@@ -71,28 +117,55 @@ export class WhisperClient {
     } as any);
 
     try {
-      const response = await fetch(this.backendUrl, {
+      const response = await fetchWithTimeout(ENDPOINTS.WHISPER_TRANSCRIBE, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`Transcription failed: ${response.status}`);
       }
 
       const transcript = await response.text();
-      console.log('[HTTP] ✓ Response received');
-      console.log('[HTTP] Transcript:', transcript);
+      console.log('[Whisper] Transcript received:', transcript);
+      this.onTranscript(transcript);
+
+      if (this.prompt && this.onSummary) {
+        console.log('[Whisper] Sending to summarization API with prompt:', this.prompt);
+        const summaryFormData = new FormData();
+        summaryFormData.append('text', `${this.prompt}\n\n${transcript}`);
+
+        const summaryResponse = await fetchWithTimeout(ENDPOINTS.VLM_SUMMARIZE, {
+          method: 'POST',
+          body: summaryFormData,
+        });
+
+        if (!summaryResponse.ok) {
+          throw new Error(`Summarization failed: ${summaryResponse.status}`);
+        }
+
+        const summaryData = await summaryResponse.json();
+        console.log('[Whisper] Summary response:', JSON.stringify(summaryData));
+
+        const summary = summaryData.output?.[0] || summaryData.summary || summaryData.text;
+        if (summary) {
+          console.log('[Whisper] Summary received');
+          this.onSummary(summary);
+        }
+      }
 
       this.recording = null;
-      this.onTranscript(transcript);
-      return transcript;
-    } catch (error) {
+    } catch (error: any) {
       this.recording = null;
-      console.error('[HTTP] ✗ Request failed:', error);
+      const errorDetails = {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        code: error?.code,
+        type: typeof error,
+      };
+      console.error('[Whisper] Error details:', JSON.stringify(errorDetails, null, 2));
+      console.error('[Whisper] Full error object:', error);
       throw error;
     }
   }

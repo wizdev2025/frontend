@@ -13,9 +13,8 @@ export default function Deaf() {
   const [summary, setSummary] = useState('');
 
   const [client] = useState(() => new WhisperClient(
-    'whisper-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com',
-    8080,
-    (text) => setTranscript(text)
+    (text) => setTranscript(text),
+    (text) => setSummary(text)
   ));
 
   const handleRecord = async () => {
@@ -24,13 +23,19 @@ export default function Deaf() {
     if (!isRecording) {
       try {
         setIsProcessing(true);
-        setRecordingMode(prompt.length > 0 ? 'split' : 'single');
+        const mode = prompt.length > 0 ? 'split' : 'single';
+        setRecordingMode(mode);
         setTranscript('The transcript will appear here');
+        if (mode === 'split') {
+          setSummary('The summary will appear here');
+        }
+
+        client.setPrompt(prompt);
         await client.startRecording();
         setIsRecording(true);
         setIsProcessing(false);
       } catch (error) {
-        console.error('[Deaf] âœ— Recording failed:', error);
+        console.error('[Deaf] Recording failed:', error);
         Alert.alert('Recording Failed', String(error));
         setIsProcessing(false);
       }
@@ -41,7 +46,7 @@ export default function Deaf() {
         setIsRecording(false);
         setIsProcessing(false);
       } catch (error) {
-        console.error('[Deaf] âœ— Transcription failed:', error);
+        console.error('[Deaf] Transcription failed:', error);
         Alert.alert('Transcription Failed', String(error));
         setIsRecording(false);
         setIsProcessing(false);

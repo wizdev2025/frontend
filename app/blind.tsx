@@ -1,10 +1,47 @@
-import { Stack } from 'expo-router';
 import { View, Pressable, Text, TextInput, Alert } from 'react-native';
-import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { styles, colors } from './styles';
 import { useRef, useState } from 'react';
 import { Audio } from 'expo-av';
-import { documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
+import { FileSystemUploadType, uploadAsync, documentDirectory, writeAsStringAsync, EncodingType} from 'expo-file-system/legacy';
+import { ENDPOINTS } from './endpoints';
+
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 300000) => {
+  const controller = new AbortController();
+  const startTime = Date.now();
+
+  console.log(`[Fetch] Starting request to ${url}`);
+  console.log(`[Fetch] Timeout set to ${timeoutMs}ms`);
+
+  const timeout = setTimeout(() => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] TIMEOUT after ${elapsed}ms - aborting`);
+    controller.abort();
+  }, timeoutMs);
+
+  controller.signal.addEventListener('abort', () => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Signal aborted after ${elapsed}ms`);
+  });
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Success after ${elapsed}ms - Status: ${response.status}`);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] FAILED after ${elapsed}ms`);
+    console.log(`[Fetch] Error name: ${error.name}`);
+    console.log(`[Fetch] Error message: ${error.message}`);
+    console.log(`[Fetch] Error type: ${typeof error}`);
+    console.log(`[Fetch] Error keys: ${Object.keys(error).join(', ')}`);
+    console.log(`[Fetch] Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    throw error;
+  }
+};
 
 export default function Blind() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -12,11 +49,7 @@ export default function Blind() {
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const backendUrl = 'https://fastapi-openshift-terminal.apps.cluster-xj5jp.xj5jp.sandbox664.opentlc.com/img_to_audio';
-
-  if (!permission) {
-    return <View />;
-  }
+  if (!permission) return <View />;
 
   if (!permission.granted) {
     return (
@@ -29,82 +62,85 @@ export default function Blind() {
   }
 
   const takePicture = async () => {
-    if (camera.current && !isProcessing) {
-      try {
-        setIsProcessing(true);
-        console.log('[Camera] Taking picture...');
-        const photo = await camera.current.takePictureAsync();
-        console.log('[Camera] ✓ Picture taken:', photo.uri);
+    if (!camera.current || isProcessing) return;
 
-        console.log('[HTTP] Sending to', backendUrl);
-        const formData = new FormData();
-        formData.append('file', {
-          uri: photo.uri,
-          type: 'image/png',
-          name: 'image.png',
-        } as any);
+    try {
+      setIsProcessing(true);
 
-        const response = await fetch(backendUrl, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+      console.log('[Blind] Taking picture');
+      const photo = await camera.current.takePictureAsync();
+      console.log('[Blind] Picture taken:', photo.uri);
 
-        // Log response details
-        console.log('[HTTP] Status:', response.status, response.statusText);
-        console.log('[HTTP] Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
-        console.log('[HTTP] Content-Type:', response.headers.get('content-type'));
+      console.log('[Blind] Sending to VLM using uploadAsync');
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.log('[HTTP] Error body:', errorText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+      const uploadResult = await uploadAsync(ENDPOINTS.VLM_DESCRIBE, photo.uri, {
+        fieldName: 'file',
+        httpMethod: 'POST',
+        uploadType: FileSystemUploadType.MULTIPART,
+      });
 
-        console.log('[HTTP] ✓ Response received');
+      console.log('[Blind] Upload complete - Status:', uploadResult.status);
+      console.log('[Blind] Response body:', uploadResult.body);
 
-        // Check if it's actually audio
-        const contentType = response.headers.get('content-type');
-        console.log('[HTTP] Actual content-type:', contentType);
-
-        // Get audio as blob and save
-        const blob = await response.blob();
-        console.log('[Blob] Size:', blob.size, 'Type:', blob.type);
-
-        const reader = new FileReader();
-
-        reader.onloadend = async () => {
-          const base64 = (reader.result as string).split(',')[1];
-          console.log('[Base64] Length:', base64.length);
-          console.log('[Base64] First 100 chars:', base64.substring(0, 100));
-
-          // Save audio file
-          const audioUri = documentDirectory + 'output.wav';
-          await writeAsStringAsync(audioUri, base64, {
-            encoding: 'base64',
-          });
-          console.log('[Audio] ✓ Saved to', audioUri);
-
-          // Play audio
-          await Audio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-          });
-          const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
-          await sound.playAsync();
-          console.log('[Audio] ✓ Playing');
-
-          setIsProcessing(false);
-        };
-
-        reader.readAsDataURL(blob);
-
-      } catch (error) {
-        console.error('[Blind] ✗ Failed:', error);
-        Alert.alert('Failed', String(error));
-        setIsProcessing(false);
+      if (uploadResult.status !== 200) {
+        throw new Error(`VLM failed: ${uploadResult.status}`);
       }
+
+      const vlmData = JSON.parse(uploadResult.body);
+      console.log('[Blind] VLM response parsed:', JSON.stringify(vlmData));
+
+      const description = vlmData.output?.[0];
+      if (!description) {
+        throw new Error('No description in VLM response');
+      }
+      console.log('[Blind] Description:', description);
+
+      console.log('[Blind] Sending to TTS');
+      const ttsFormData = new FormData();
+      ttsFormData.append('text', description);
+
+      const ttsResponse = await fetchWithTimeout(ENDPOINTS.TTS, {
+        method: 'POST',
+        body: ttsFormData,
+      });
+
+      if (!ttsResponse.ok) {
+        throw new Error(`TTS failed: ${ttsResponse.status}`);
+      }
+
+      console.log('[Blind] TTS response received');
+      const blob = await ttsResponse.blob();
+      console.log('[Blind] Audio blob size:', blob.size);
+
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        const audioUri = documentDirectory + 'output.wav';
+
+        await writeAsStringAsync(audioUri, base64, { encoding: EncodingType.Base64 });
+        console.log('[Blind] Audio saved:', audioUri);
+
+        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+        const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
+        await sound.playAsync();
+        console.log('[Blind] Playing audio');
+
+        setIsProcessing(false);
+      };
+
+      reader.readAsDataURL(blob);
+    } catch (error: any) {
+      const errorDetails = {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        code: error?.code,
+        type: typeof error,
+      };
+      console.error('[Blind] Error details:', JSON.stringify(errorDetails, null, 2));
+      console.error('[Blind] Full error object:', error);
+      Alert.alert('Error', `${error?.name || 'Error'}: ${error?.message || String(error)}`);
+      setIsProcessing(false);
     }
   };
 
@@ -112,11 +148,7 @@ export default function Blind() {
     <View style={styles.container}>
       <View style={{ flex: 0.75, padding: 10, paddingTop: 0 }}>
         <Pressable style={[styles.card, { flex: 1, overflow: 'hidden' }]} onPress={takePicture}>
-          <CameraView
-            ref={camera}
-            style={{ flex: 1 }}
-            facing="back"
-          />
+          <CameraView ref={camera} style={{ flex: 1 }} facing="back" />
         </Pressable>
       </View>
 
