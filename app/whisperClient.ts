@@ -147,7 +147,7 @@ export class WhisperClient {
         const summaryData = await summaryResponse.json();
         console.log('[Whisper] Summary response:', JSON.stringify(summaryData));
 
-        const summary = summaryData.output?.[0] || summaryData.summary || summaryData.text;
+        const summary = summaryData.output || summaryData.summary || summaryData.text;
         if (summary) {
           console.log('[Whisper] Summary received');
           this.onSummary(summary);
