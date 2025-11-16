@@ -1,6 +1,43 @@
 import { Audio } from 'expo-av';
 import { ENDPOINTS } from './endpoints';
 
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 300000) => {
+  const controller = new AbortController();
+  const startTime = Date.now();
+
+  console.log(`[Fetch] Starting request to ${url}`);
+  console.log(`[Fetch] Timeout set to ${timeoutMs}ms`);
+
+  const timeout = setTimeout(() => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] TIMEOUT after ${elapsed}ms - aborting`);
+    controller.abort();
+  }, timeoutMs);
+
+  controller.signal.addEventListener('abort', () => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Signal aborted after ${elapsed}ms`);
+  });
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Success after ${elapsed}ms - Status: ${response.status}`);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] FAILED after ${elapsed}ms`);
+    console.log(`[Fetch] Error name: ${error.name}`);
+    console.log(`[Fetch] Error message: ${error.message}`);
+    console.log(`[Fetch] Error type: ${typeof error}`);
+    console.log(`[Fetch] Error keys: ${Object.keys(error).join(', ')}`);
+    console.log(`[Fetch] Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    throw error;
+  }
+};
+
 export class WhisperClient {
   private recording: Audio.Recording | null = null;
   private onTranscript: (text: string) => void;
@@ -80,10 +117,9 @@ export class WhisperClient {
     } as any);
 
     try {
-      const response = await fetch(ENDPOINTS.WHISPER_TRANSCRIBE, {
+      const response = await fetchWithTimeout(ENDPOINTS.WHISPER_TRANSCRIBE, {
         method: 'POST',
         body: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (!response.ok) {
@@ -99,7 +135,7 @@ export class WhisperClient {
         const summaryFormData = new FormData();
         summaryFormData.append('text', `${this.prompt}\n\n${transcript}`);
 
-        const summaryResponse = await fetch(ENDPOINTS.VLM_SUMMARIZE, {
+        const summaryResponse = await fetchWithTimeout(ENDPOINTS.VLM_SUMMARIZE, {
           method: 'POST',
           body: summaryFormData,
         });
@@ -119,9 +155,17 @@ export class WhisperClient {
       }
 
       this.recording = null;
-    } catch (error) {
+    } catch (error: any) {
       this.recording = null;
-      console.error('[Whisper] Error:', error);
+      const errorDetails = {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        code: error?.code,
+        type: typeof error,
+      };
+      console.error('[Whisper] Error details:', JSON.stringify(errorDetails, null, 2));
+      console.error('[Whisper] Full error object:', error);
       throw error;
     }
   }

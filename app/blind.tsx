@@ -3,19 +3,42 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { styles, colors } from './styles';
 import { useRef, useState } from 'react';
 import { Audio } from 'expo-av';
-import { documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
+import { FileSystemUploadType, uploadAsync, documentDirectory, writeAsStringAsync, EncodingType} from 'expo-file-system/legacy';
 import { ENDPOINTS } from './endpoints';
 
-const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 3000000) => {
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = 300000) => {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const startTime = Date.now();
+
+  console.log(`[Fetch] Starting request to ${url}`);
+  console.log(`[Fetch] Timeout set to ${timeoutMs}ms`);
+
+  const timeout = setTimeout(() => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] TIMEOUT after ${elapsed}ms - aborting`);
+    controller.abort();
+  }, timeoutMs);
+
+  controller.signal.addEventListener('abort', () => {
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Signal aborted after ${elapsed}ms`);
+  });
 
   try {
     const response = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] Success after ${elapsed}ms - Status: ${response.status}`);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(timeout);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fetch] FAILED after ${elapsed}ms`);
+    console.log(`[Fetch] Error name: ${error.name}`);
+    console.log(`[Fetch] Error message: ${error.message}`);
+    console.log(`[Fetch] Error type: ${typeof error}`);
+    console.log(`[Fetch] Error keys: ${Object.keys(error).join(', ')}`);
+    console.log(`[Fetch] Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
     throw error;
   }
 };
@@ -48,26 +71,23 @@ export default function Blind() {
       const photo = await camera.current.takePictureAsync();
       console.log('[Blind] Picture taken:', photo.uri);
 
-      console.log('[Blind] Sending to VLM');
-      const formData = new FormData();
-      formData.append('file', {
-        uri: photo.uri,
-        type: 'image/png',
-        name: 'image.png',
-      } as any);
+      console.log('[Blind] Sending to VLM using uploadAsync');
 
-      const vlmResponse = await fetchWithTimeout(ENDPOINTS.VLM_DESCRIBE, {
-        method: 'POST',
-        body: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const uploadResult = await uploadAsync(ENDPOINTS.VLM_DESCRIBE, photo.uri, {
+        fieldName: 'file',
+        httpMethod: 'POST',
+        uploadType: FileSystemUploadType.MULTIPART,
       });
 
-      if (!vlmResponse.ok) {
-        throw new Error(`VLM failed: ${vlmResponse.status}`);
+      console.log('[Blind] Upload complete - Status:', uploadResult.status);
+      console.log('[Blind] Response body:', uploadResult.body);
+
+      if (uploadResult.status !== 200) {
+        throw new Error(`VLM failed: ${uploadResult.status}`);
       }
 
-      const vlmData = await vlmResponse.json();
-      console.log('[Blind] VLM response:', JSON.stringify(vlmData));
+      const vlmData = JSON.parse(uploadResult.body);
+      console.log('[Blind] VLM response parsed:', JSON.stringify(vlmData));
 
       const description = vlmData.output?.[0];
       if (!description) {
@@ -97,7 +117,7 @@ export default function Blind() {
         const base64 = (reader.result as string).split(',')[1];
         const audioUri = documentDirectory + 'output.wav';
 
-        await writeAsStringAsync(audioUri, base64, { encoding: 'base64' });
+        await writeAsStringAsync(audioUri, base64, { encoding: EncodingType.Base64 });
         console.log('[Blind] Audio saved:', audioUri);
 
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
@@ -109,9 +129,17 @@ export default function Blind() {
       };
 
       reader.readAsDataURL(blob);
-    } catch (error) {
-      console.error('[Blind] Error:', error);
-      Alert.alert('Error', String(error));
+    } catch (error: any) {
+      const errorDetails = {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        code: error?.code,
+        type: typeof error,
+      };
+      console.error('[Blind] Error details:', JSON.stringify(errorDetails, null, 2));
+      console.error('[Blind] Full error object:', error);
+      Alert.alert('Error', `${error?.name || 'Error'}: ${error?.message || String(error)}`);
       setIsProcessing(false);
     }
   };
