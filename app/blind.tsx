@@ -1,7 +1,7 @@
 import { View, Pressable, Text, TextInput, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { styles, colors } from './styles';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
 import { FileSystemUploadType, uploadAsync, documentDirectory, writeAsStringAsync, EncodingType} from 'expo-file-system/legacy';
 import { ENDPOINTS } from './endpoints';
@@ -46,8 +46,17 @@ const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: nu
 export default function Blind() {
   const [permission, requestPermission] = useCameraPermissions();
   const camera = useRef<CameraView>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
 
   if (!permission) return <View />;
 
@@ -122,6 +131,9 @@ export default function Blind() {
 
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
         const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
+
+        soundRef.current = sound;
+
         await sound.playAsync();
         console.log('[Blind] Playing audio');
 
