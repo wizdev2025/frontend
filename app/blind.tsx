@@ -1,4 +1,4 @@
-import { View, Pressable, Text, TextInput, Alert, Image } from 'react-native';
+import { View, Pressable, Text, Alert, Image } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { styles, colors } from './styles';
 import { useRef, useState, useEffect } from 'react';
@@ -47,7 +47,6 @@ export default function Blind() {
   const [permission, requestPermission] = useCameraPermissions();
   const camera = useRef<CameraView>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
-  const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(null);
 
@@ -163,7 +162,7 @@ export default function Blind() {
 
   return (
     <View style={styles.container}>
-      <View style={{ flex: 0.75, padding: 10, paddingTop: 0 }}>
+      <View style={{ flex: 1, padding: 10, paddingTop: 0 }}>
         <Pressable style={[styles.card, { flex: 1, overflow: 'hidden' }]} onPress={takePicture}>
           {currentPhoto ? (
             <Image source={{ uri: currentPhoto }} style={{ flex: 1 }} resizeMode="cover" />
@@ -171,25 +170,6 @@ export default function Blind() {
             <CameraView ref={camera} style={{ flex: 1 }} facing="back" />
           )}
         </Pressable>
-      </View>
-
-      <View style={{ flex: 0.25, padding: 10 }}>
-        <TextInput
-          style={[styles.inputCard, {
-            flex: 1,
-            backgroundColor: colors.white,
-            padding: 10,
-            fontSize: 38,
-            textAlignVertical: 'top',
-            textAlign: 'center'
-          }]}
-          placeholder="Enter detailed questions (optional)"
-          placeholderTextColor={colors.textMainVisual}
-          value={prompt}
-          onChangeText={setPrompt}
-          editable={!isProcessing}
-          multiline
-        />
       </View>
     </View>
   );
