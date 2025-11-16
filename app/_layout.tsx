@@ -21,7 +21,7 @@ export default function RootLayout() {
           marginRight: 15,
           fontSize: 17
         }}>
-          Powered By OpenShift AI
+          OpenShift AI
         </Text>
       ),
       headerShown: true,
