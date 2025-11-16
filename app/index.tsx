@@ -19,14 +19,18 @@ export default function Index() {
       </View>
 
       <View style={{ flex: 1, padding: 10 }}>
-        <Pressable
-          style={styles.buttonCard}
-          onPress={() => router.push('/blind')}
-        >
-          <Text style={styles.buttonTextVisual}>Visual</Text>
-          <Ionicons name="eye" size={128} color={colors.textMainVisual} style={{ marginBottom: 10 }} />
-          <Text style={styles.buttonTextVisual}>Assistance</Text>
-        </Pressable>
+      <Pressable
+        style={[styles.buttonCard, { padding: 20 }]}
+        onPress={() => router.push('/blind')}
+      >
+        <Text style={styles.buttonTextVisual} numberOfLines={1} adjustsFontSizeToFit>
+          Visual
+        </Text>
+        <Ionicons name="eye" size={100} color={colors.textMainVisual} style={{ marginVertical: 10 }} />
+        <Text style={styles.buttonTextVisual} numberOfLines={1} adjustsFontSizeToFit>
+          Assistance
+        </Text>
+      </Pressable>
       </View>
     </View>
   );
